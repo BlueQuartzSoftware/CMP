@@ -151,13 +151,25 @@ if(HDF5_FOUND)
     if("${BUILD_TYPES}" STREQUAL "")
         set(BUILD_TYPES "Debug")
     endif()
+    if(${HDF5_VERSION_STRING} VERSION_GREATER 1.8.15)
+      # Version 1.8.16 creates an hdf5-targets-release.cmake, but
+      # hdf5-config.cmake does not include it
+      foreach(type ${BUILD_TYPES})
+        string(TOLOWER ${type} type_lower)
+        include(${HDF5_DIR}/hdf5-targets-${type_lower}.cmake)
+      endforeach()
+    endif()
   endif()
   if(NOT APPLE)
+    set(shared_extension )
+    if(${HDF5_VERSION_STRING} VERSION_GREATER 1.8.15)
+      set(shared_extension -shared)
+    endif()
     AddHDF5CopyInstallRules(LIBVAR HDF5_LIB
-                        LIBNAME hdf5
+                        LIBNAME hdf5${shared_extension}
                         TYPES ${BUILD_TYPES})
     AddHDF5CopyInstallRules(LIBVAR HDF5_CPP_LIB
-                        LIBNAME hdf5_cpp
+                        LIBNAME hdf5_cpp${shared_extension}
                         TYPES ${BUILD_TYPES})
   endif()
 
