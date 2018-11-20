@@ -49,7 +49,7 @@ function(AddQxOrmCopyInstallRules)
 
     # Get the Actual Library Path and create Install and copy rules
     # get_target_property(DllLibPath ${qxorm_LIBNAME} IMPORTED_LOCATION_${UpperBType})
-    message(STATUS "  DllLibPath: ${DllLibPath}")
+    # message(STATUS "  DllLibPath: ${DllLibPath}")
     if(NOT "${DllLibPath}" STREQUAL "LibPath-NOTFOUND")
       # message(STATUS "  Creating Install Rule for ${DllLibPath}")
       if(NOT TARGET ZZ_${qxorm_LIBVAR}_DLL_${UpperBType}-Copy)
