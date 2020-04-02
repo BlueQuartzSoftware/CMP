@@ -382,7 +382,8 @@
 // #define BIGENDIAN 0
 // #endif
 
-#if @BIGENDIAN@
+#define BIGENDIAN @BIGENDIAN@
+#if BIGENDIAN
 #define CMP_WORDS_BIGENDIAN
 #endif
 
