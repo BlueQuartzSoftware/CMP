@@ -8,10 +8,11 @@ INCLUDE (${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
 
 # Do a very simple check for the system processor. We really only support compiling
 # on a Little Endian system
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  set(CMP_WORDS_BIGENDIAN 0)
+message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
+  set(BIGENDIAN 0)
 else()
-  set(CMP_WORDS_BIGENDIAN 1)
+  set(BIGENDIAN 1)
 endif()
 
 # We also assume a 64 bit system for compiling.
@@ -56,12 +57,11 @@ MACRO ( CORE_CHECK_TYPE_SIZE type var)
     endif()
 ENDMACRO()
 
+set(CMP_SIZEOF_CHAR 1)
+set(CMP_SIZEOF_SHORT 2)
+set(CMP_SIZEOF_INT 4)
+set(CMP_SIZEOF_UNSIGNED 4)
 
-
-CORE_CHECK_TYPE_SIZE(char           CMP_SIZEOF_CHAR)
-CORE_CHECK_TYPE_SIZE(short          CMP_SIZEOF_SHORT)
-CORE_CHECK_TYPE_SIZE(int            CMP_SIZEOF_INT)
-CORE_CHECK_TYPE_SIZE(unsigned       CMP_SIZEOF_UNSIGNED)
 if(NOT APPLE)
     CORE_CHECK_TYPE_SIZE(long           CMP_SIZEOF_LONG)
     CORE_CHECK_TYPE_SIZE("long long"    CMP_SIZEOF_LONG_LONG)
