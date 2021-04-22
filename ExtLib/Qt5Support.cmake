@@ -18,7 +18,7 @@ function(CopyQt5RunTimeLibraries)
   if(MSVC_IDE)
     set(SUPPORT_LIB_OPTION 0)
   elseif(APPLE) # Apple systems do NOT need this so just skip this entirely
-    set(SUPPORT_LIB_OPTION 2)
+    return()
   elseif(UNIX AND NOT MSVC)
     set(SUPPORT_LIB_OPTION 3)
   endif()
@@ -88,7 +88,7 @@ endfunction()
 
 
 # -------------------------------------------------------------
-# This function adds the necessary cmake code to find the HDF5
+# This function adds the necessary cmake code to find the Qt5
 # shared libraries and setup custom copy commands and/or install
 # rules for Linux and Windows to use
 function(AddQt5SupportLibraryCopyInstallRules)
@@ -101,7 +101,7 @@ function(AddQt5SupportLibraryCopyInstallRules)
   if(MSVC_IDE)
     set(SUPPORT_LIB_OPTION 0)
   elseif(APPLE) # Apple systems do NOT need this so just skip this entirely
-    set(SUPPORT_LIB_OPTION 2)
+   return()
   elseif(UNIX AND NOT MSVC)
     set(SUPPORT_LIB_OPTION 3)
   endif()
@@ -114,16 +114,18 @@ function(AddQt5SupportLibraryCopyInstallRules)
     set(destination "lib")
   endif()
 
-
   if(SUPPORT_LIB_OPTION EQUAL 0)
     # We need to copy both the Debug and Release versions of the libraries into their respective
     # subfolders for Visual Studio builds
     set(OUTPUT_DIRS "Release;Debug;MinSizeRel;RelWithDebInfo")
     foreach(qtlib ${P_LIBRARIES})
       foreach(INT_DIR ${OUTPUT_DIRS})
+        set(SUFFIX "")
+        if("${INT_DIR}" STREQUAL "Debug")
+          set(SUFFIX ${P_DEBUG_SUFFIX})
+        endif()
         # message(STATUS "Copy Rule for Qt Support library ${qtlib}${SUFFIX}.dll")
         if(NOT TARGET ZZ_${qtlib}-${INT_DIR}-Copy)
-          set(SUFFIX ${P_DEBUG_SUFFIX})
           add_custom_target(ZZ_${qtlib}-${INT_DIR}-Copy ALL
                               COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}
                               COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll
@@ -135,7 +137,6 @@ function(AddQt5SupportLibraryCopyInstallRules)
           set_property(GLOBAL PROPERTY COPY_LIBRARY_TARGETS ${COPY_LIBRARY_TARGETS} ZZ_${qtlib}-${INT_DIR}-Copy)
         endif()
       endforeach()
-
     endforeach(qtlib)
 
   elseif(SUPPORT_LIB_OPTION EQUAL 1)
@@ -163,8 +164,9 @@ function(AddQt5SupportLibraryCopyInstallRules)
 endfunction()
 
 # --------------------------------------------------------------------
-# Creates the appropriate qt.conf files for our build
-#
+# Creates the appropriate qt.conf files for our build. Apple systems
+# are ignored as the necessary rules are taken care of during the
+# packaging phases.
 # --------------------------------------------------------------------
 function(AddQtConfTargets)
   set(options)
@@ -173,58 +175,47 @@ function(AddQtConfTargets)
 
   cmake_parse_arguments(P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
-  set(SUPPORT_LIB_OPTION 1)
-  if(MSVC_IDE)
-    set(SUPPORT_LIB_OPTION 0)
-  elseif(APPLE) # Apple systems do NOT need this so just skip this entirely
-    set(SUPPORT_LIB_OPTION 2)
-  elseif(UNIX AND NOT MSVC)
-    set(SUPPORT_LIB_OPTION 3)
+  # For macOS systems, we don't need any of this so return now.
+  if(APPLE)
+    return()
   endif()
   
   # Create a QtConf file in all locations for each kind of build under Visual Studio
-  if(SUPPORT_LIB_OPTION EQUAL 0)
-    set(QTCONF_DIR "bin")
-    set(QTPLUGINS_DIR "../")
-    if(WIN32)
-      set(QTCONF_DIR ".")
-      set(QTPLUGINS_DIR "")
-    endif()
-    
+  if(MSVC_IDE)
     set(OUTPUT_DIRS "Release;Debug;MinSizeRel;RelWithDebInfo")
     foreach(INT_DIR ${OUTPUT_DIRS})
       set(qt_conf_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/qt.conf")
-      # Create the qt.conf file so that the image plugins will be loaded correctly
-      FILE(WRITE ${qt_conf_file} "[Paths]\nPlugins = ${P_QT_PLUGINS_DIR}\n")
-      FILE(APPEND ${qt_conf_file} "Prefix = .\n")
-      FILE(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
-      FILE(APPEND ${qt_conf_file} "Data = .\n")
+      # Start Writing the qt.conf file
+      file(WRITE ${qt_conf_file} "[Paths]\nPrefix = .\n")
+      file(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
+      file(APPEND ${qt_conf_file} "Data = .\n")
+      file(APPEND ${qt_conf_file} "Plugins = ${P_QT_PLUGINS_DIR}\n")
     endforeach()
-
-
-  elseif(SUPPORT_LIB_OPTION EQUAL 1) # Create a qt.conf file for every other kind of Generator
+  elseif() # Create a qt.conf file for every other kind of Generator
     set(INT_DIR "")
     set(qt_conf_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/qt.conf")
     # Create the qt.conf file so that the image plugins will be loaded correctly
-    FILE(WRITE ${qt_conf_file} "[Paths]\nPlugins = ${P_QT_PLUGINS_DIR}\n")
-    FILE(APPEND ${qt_conf_file} "Prefix = .\n")
-    FILE(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
-    FILE(APPEND ${qt_conf_file} "Data = .\n")
-
+    file(WRITE ${qt_conf_file} "[Paths]\nPrefix = .\n")
+    file(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
+    file(APPEND ${qt_conf_file} "Data = .\n")
+    file(APPEND ${qt_conf_file} "Plugins = ${P_QT_PLUGINS_DIR}\n")
   endif()
 
-  # Create an Installation rule for MSVC and Linux. Apple installation does it a different way.
-  if(NOT APPLE)
-    set(qt_conf_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qt.conf")
-    # Create the qt.conf file so that the image plugins will be loaded correctly
-    FILE(WRITE ${qt_conf_file} "[Paths]\nPlugins = ${QTPLUGINS_DIR}Plugins\n")
-    FILE(APPEND ${qt_conf_file} "Prefix = .\n")
-    FILE(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
-    FILE(APPEND ${qt_conf_file} "Data = .\n")
-    install(FILES ${qt_conf_file}
-      DESTINATION ${QTCONF_DIR}
-      COMPONENT Applications)
+  set(QTCONF_DIR "bin")
+  set(QTPLUGINS_DIR "../")
+  if(WIN32)
+    set(QTCONF_DIR ".")
+    set(QTPLUGINS_DIR "")
   endif()
+  # Create an Installation rule for MSVC and Linux.
+  set(qt_conf_file "${PROJECT_BINARY_DIR}/qt.conf")
+  file(WRITE ${qt_conf_file} "[Paths]\nPrefix = .\n")
+  file(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
+  file(APPEND ${qt_conf_file} "Data = .\n")
+  file(APPEND ${qt_conf_file} "Plugins = ${QTPLUGINS_DIR}Plugins\n")
+  install(FILES ${qt_conf_file}
+    DESTINATION ${QTCONF_DIR}
+    COMPONENT Applications)
 
 endfunction()
 
@@ -239,6 +230,9 @@ function(AddQt5LibraryInstallRule)
 
   cmake_parse_arguments(P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
   # message(STATUS "Install Rules Qt5 Libraries: ${P_LIBRARIES}")
+  if(APPLE)
+    return()
+  endif()
 
   set(build_types "Debug;Release")
   if(WIN32)
@@ -253,20 +247,17 @@ function(AddQt5LibraryInstallRule)
     set(destination "lib")
   endif()
 
-  if(NOT APPLE)
-    foreach(qtlib ${P_LIBRARIES})
-      foreach(build_type ${build_types})
-        get_target_property(${build_type}_loc Qt5::${qtlib} LOCATION_${build_type})
-          install(FILES ${${build_type}_loc}
-                  DESTINATION "${destination}"
-                  CONFIGURATIONS ${build_type}
-                  COMPONENT Applications)
-      endforeach()
+  foreach(qtlib ${P_LIBRARIES})
+    foreach(build_type ${build_types})
+      get_target_property(${build_type}_loc Qt5::${qtlib} LOCATION_${build_type})
+        install(FILES ${${build_type}_loc}
+                DESTINATION "${destination}"
+                CONFIGURATIONS ${build_type}
+                COMPONENT Applications)
     endforeach()
-  endif()
+  endforeach()
+
 endfunction()
-
-
 
 #-------------------------------------------------------------------------------
 # Finds plugins from the Qt installation. The pluginlist argument should be
@@ -280,6 +271,11 @@ function(AddQt5Plugins)
     set(CMAKE_BUILD_TYPE "Release")
   endif()
   cmake_parse_arguments(P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+  if(APPLE)
+    return()
+  endif()
+
   set(build_types "Debug;Release")
   if(WIN32)
     set(qt_plugin_prefix "")
@@ -293,23 +289,20 @@ function(AddQt5Plugins)
 
   # message(STATUS "Qt5 Plugins: ${P_PLUGIN_NAMES}")
   # We only use install rules for Linux/Windows.
-  # OS X will get its own installation script that moves the Plugins correctly into the bundle
-  if(NOT APPLE)
-    foreach(build_type ${build_types})
-      # message(STATUS "build_type: ${build_type}")
-      foreach(plugin ${P_PLUGIN_NAMES})
-        if(TARGET Qt5::${plugin}${P_PLUGIN_SUFFIX})
-          get_target_property(${build_type}_loc Qt5::${plugin}${P_PLUGIN_SUFFIX} LOCATION_${build_type})
+  foreach(build_type ${build_types})
+    # message(STATUS "build_type: ${build_type}")
+    foreach(plugin ${P_PLUGIN_NAMES})
+      if(TARGET Qt5::${plugin}${P_PLUGIN_SUFFIX})
+        get_target_property(${build_type}_loc Qt5::${plugin}${P_PLUGIN_SUFFIX} LOCATION_${build_type})
 
-            install(FILES ${${build_type}_loc}
-                DESTINATION ./Plugins/${P_PLUGIN_TYPE}
-                CONFIGURATIONS ${build_type}
-                COMPONENT Applications)
-          endif()
+          install(FILES ${${build_type}_loc}
+              DESTINATION ./Plugins/${P_PLUGIN_TYPE}
+              CONFIGURATIONS ${build_type}
+              COMPONENT Applications)
+        endif()
 
-      endforeach()
     endforeach()
-  endif()
+  endforeach()
 
 endfunction()
 
@@ -374,22 +367,8 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
     # This is pretty much needed on all the platforms.
     AddQt5LibraryInstallRule(LIBRARIES ${Qt5_COMPONENTS})
   endif()
-  
-  #----------------------------------------------------------------------------
-  # This is a wierd way to bracket the Qt releases but there has NEVER been 
-  # an official version of Qt with a 5.x.99 version so we are going to use that
-  # range to bracket each release of Qt that we Support.
 
-  # QT 5.9.x
-  if (QM_QT_VERSION VERSION_GREATER 5.8.99 AND QM_QT_VERSION VERSION_LESS 5.9.99)
-    set(Qt5_ICU_COMPONENTS "")
-  endif()
-
-  # QT 5.10.x
-  if (QM_QT_VERSION VERSION_GREATER 5.9.99 AND QM_QT_VERSION VERSION_LESS 5.10.99)
-    set(Qt5_ICU_COMPONENTS "")
-  endif()
-
+  set(Qt5_ICU_COMPONENTS "")
   if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(Qt5_ICU_COMPONENTS icui18n icuuc icudata)
   endif()
