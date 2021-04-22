@@ -395,7 +395,9 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
     get_property(QT_PLUGINS_FILE_TEMPLATE GLOBAL PROPERTY QtPluginsCMakeFile)
   endif()
 
-  AddQtConfTargets(QT_PLUGINS_DIR ${QM_QT_INSTALL_PLUGINS})
+  if(NOT DREAM3D_ANACONDA)
+    AddQtConfTargets(QT_PLUGINS_DIR ${QM_QT_INSTALL_PLUGINS})
+  endif()
 
   file(WRITE ${QT_PLUGINS_FILE_TEMPLATE} "")
   file(WRITE ${QT_PLUGINS_FILE} "")
@@ -498,5 +500,4 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
   list(APPEND CMP_LIB_SEARCH_DIRS ${QT_BINARY_DIR} ${QT_LIBRARY_DIR} )
 
 endmacro()
-
 
