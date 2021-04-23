@@ -1,36 +1,3 @@
-#--////////////////////////////////////////////////////////////////////////////
-# Copyright (c) 2009-2015 BlueQuartz Software, LLC
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or
-# other materials provided with the distribution.
-#
-# Neither the name of BlueQuartz Software, the US Air Force, nor the names of its
-# contributors may be used to endorse or promote products derived from this software
-# without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# The code contained herein was partially funded by the followig contracts:
-#    United States Air Force Prime Contract FA8650-07-D-5800
-#    United States Air Force Prime Contract FA8650-10-D-5210
-#    United States Prime Contract Navy N00173-07-C-2068
-#--////////////////////////////////////////////////////////////////////////////
 # --------------------------------------------------------------------
 #-- Copy all the Qt5 dependent DLLs into the current build directory so that
 #-- one can debug an application or library that depends on Qt5 libraries.
@@ -51,7 +18,7 @@ function(CopyQt5RunTimeLibraries)
   if(MSVC_IDE)
     set(SUPPORT_LIB_OPTION 0)
   elseif(APPLE) # Apple systems do NOT need this so just skip this entirely
-    set(SUPPORT_LIB_OPTION 2)
+    return()
   elseif(UNIX AND NOT MSVC)
     set(SUPPORT_LIB_OPTION 3)
   endif()
@@ -121,7 +88,7 @@ endfunction()
 
 
 # -------------------------------------------------------------
-# This function adds the necessary cmake code to find the HDF5
+# This function adds the necessary cmake code to find the Qt5
 # shared libraries and setup custom copy commands and/or install
 # rules for Linux and Windows to use
 function(AddQt5SupportLibraryCopyInstallRules)
@@ -134,7 +101,7 @@ function(AddQt5SupportLibraryCopyInstallRules)
   if(MSVC_IDE)
     set(SUPPORT_LIB_OPTION 0)
   elseif(APPLE) # Apple systems do NOT need this so just skip this entirely
-    set(SUPPORT_LIB_OPTION 2)
+   return()
   elseif(UNIX AND NOT MSVC)
     set(SUPPORT_LIB_OPTION 3)
   endif()
@@ -147,40 +114,29 @@ function(AddQt5SupportLibraryCopyInstallRules)
     set(destination "lib")
   endif()
 
-
   if(SUPPORT_LIB_OPTION EQUAL 0)
     # We need to copy both the Debug and Release versions of the libraries into their respective
     # subfolders for Visual Studio builds
+    set(OUTPUT_DIRS "Release;Debug;MinSizeRel;RelWithDebInfo")
     foreach(qtlib ${P_LIBRARIES})
-
-      set(INT_DIR "Debug")
-      # message(STATUS "Copy Rule for Qt Support library ${qtlib}${SUFFIX}.dll")
-      if(NOT TARGET ZZ_${qtlib}-${INT_DIR}-Copy)
-        set(SUFFIX ${P_DEBUG_SUFFIX})
-        add_custom_target(ZZ_${qtlib}-${INT_DIR}-Copy ALL
-                            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}
-                            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/
-                            COMMENT "Copying ${P_PREIX}${qtlib}${SUFFIX}.dll to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/")
-        set_target_properties(ZZ_${qtlib}-${INT_DIR}-Copy PROPERTIES FOLDER ZZ_COPY_FILES/${INT_DIR}/Qt5)
-        install(FILES ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll  DESTINATION "${destination}" CONFIGURATIONS ${INT_DIR} COMPONENT Applications)
-        get_property(COPY_LIBRARY_TARGETS GLOBAL PROPERTY COPY_LIBRARY_TARGETS)
-        set_property(GLOBAL PROPERTY COPY_LIBRARY_TARGETS ${COPY_LIBRARY_TARGETS} ZZ_${qtlib}-${INT_DIR}-Copy)
-      endif()
-
-      set(INT_DIR "Release")
-      if(NOT TARGET ZZ_${qtlib}-${INT_DIR}-Copy)
+      foreach(INT_DIR ${OUTPUT_DIRS})
         set(SUFFIX "")
-        add_custom_target(ZZ_${qtlib}-${INT_DIR}-Copy ALL
-                            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}
-                            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/
-                            COMMENT "Copying ${P_PREIX}${qtlib}${SUFFIX}.dll to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/")
-        set_target_properties(ZZ_${qtlib}-${INT_DIR}-Copy PROPERTIES FOLDER ZZ_COPY_FILES/${INT_DIR}/Qt5)
-        install(FILES ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll  DESTINATION "${destination}" CONFIGURATIONS ${INT_DIR} COMPONENT Applications)
-        get_property(COPY_LIBRARY_TARGETS GLOBAL PROPERTY COPY_LIBRARY_TARGETS)
-        set_property(GLOBAL PROPERTY COPY_LIBRARY_TARGETS ${COPY_LIBRARY_TARGETS} ZZ_${qtlib}-${INT_DIR}-Copy)      
-      endif()
+        if("${INT_DIR}" STREQUAL "Debug")
+          set(SUFFIX ${P_DEBUG_SUFFIX})
+        endif()
+        # message(STATUS "Copy Rule for Qt Support library ${qtlib}${SUFFIX}.dll")
+        if(NOT TARGET ZZ_${qtlib}-${INT_DIR}-Copy)
+          add_custom_target(ZZ_${qtlib}-${INT_DIR}-Copy ALL
+                              COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}
+                              COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll
+                              ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/
+                              COMMENT "Copying ${P_PREIX}${qtlib}${SUFFIX}.dll to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/")
+          set_target_properties(ZZ_${qtlib}-${INT_DIR}-Copy PROPERTIES FOLDER ZZ_COPY_FILES/${INT_DIR}/Qt5)
+          install(FILES ${QT_DLL_PATH}/${P_PREIX}${qtlib}${SUFFIX}.dll  DESTINATION "${destination}" CONFIGURATIONS ${INT_DIR} COMPONENT Applications)
+          get_property(COPY_LIBRARY_TARGETS GLOBAL PROPERTY COPY_LIBRARY_TARGETS)
+          set_property(GLOBAL PROPERTY COPY_LIBRARY_TARGETS ${COPY_LIBRARY_TARGETS} ZZ_${qtlib}-${INT_DIR}-Copy)
+        endif()
+      endforeach()
     endforeach(qtlib)
 
   elseif(SUPPORT_LIB_OPTION EQUAL 1)
@@ -204,8 +160,62 @@ function(AddQt5SupportLibraryCopyInstallRules)
         set_property(GLOBAL PROPERTY COPY_LIBRARY_TARGETS ${COPY_LIBRARY_TARGETS} ZZ_${qtlib}-Copy)        
       endif()
     endforeach(qtlib)
-
   endif()
+endfunction()
+
+# --------------------------------------------------------------------
+# Creates the appropriate qt.conf files for our build. Apple systems
+# are ignored as the necessary rules are taken care of during the
+# packaging phases.
+# --------------------------------------------------------------------
+function(AddQtConfTargets)
+  set(options)
+  set(oneValueArgs QT_PLUGINS_DIR)
+  set(multiValueArgs)
+
+  cmake_parse_arguments(P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+  # For macOS systems, we don't need any of this so return now.
+  if(APPLE)
+    return()
+  endif()
+  
+  # Create a QtConf file in all locations for each kind of build under Visual Studio
+  if(MSVC_IDE)
+    set(OUTPUT_DIRS "Release;Debug;MinSizeRel;RelWithDebInfo")
+    foreach(INT_DIR ${OUTPUT_DIRS})
+      set(qt_conf_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/qt.conf")
+      # Start Writing the qt.conf file
+      file(WRITE ${qt_conf_file} "[Paths]\nPrefix = .\n")
+      file(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
+      file(APPEND ${qt_conf_file} "Data = .\n")
+      file(APPEND ${qt_conf_file} "Plugins = ${P_QT_PLUGINS_DIR}\n")
+    endforeach()
+  elseif() # Create a qt.conf file for every other kind of Generator
+    set(INT_DIR "")
+    set(qt_conf_file "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${INT_DIR}/qt.conf")
+    # Create the qt.conf file so that the image plugins will be loaded correctly
+    file(WRITE ${qt_conf_file} "[Paths]\nPrefix = .\n")
+    file(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
+    file(APPEND ${qt_conf_file} "Data = .\n")
+    file(APPEND ${qt_conf_file} "Plugins = ${P_QT_PLUGINS_DIR}\n")
+  endif()
+
+  set(QTCONF_DIR "bin")
+  set(QTPLUGINS_DIR "../")
+  if(WIN32)
+    set(QTCONF_DIR ".")
+    set(QTPLUGINS_DIR "")
+  endif()
+  # Create an Installation rule for MSVC and Linux.
+  set(qt_conf_file "${PROJECT_BINARY_DIR}/qt.conf")
+  file(WRITE ${qt_conf_file} "[Paths]\nPrefix = .\n")
+  file(APPEND ${qt_conf_file} "LibraryExecutables = .\n")
+  file(APPEND ${qt_conf_file} "Data = .\n")
+  file(APPEND ${qt_conf_file} "Plugins = ${QTPLUGINS_DIR}Plugins\n")
+  install(FILES ${qt_conf_file}
+    DESTINATION ${QTCONF_DIR}
+    COMPONENT Applications)
 
 endfunction()
 
@@ -220,6 +230,9 @@ function(AddQt5LibraryInstallRule)
 
   cmake_parse_arguments(P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
   # message(STATUS "Install Rules Qt5 Libraries: ${P_LIBRARIES}")
+  if(APPLE)
+    return()
+  endif()
 
   set(build_types "Debug;Release")
   if(WIN32)
@@ -237,18 +250,14 @@ function(AddQt5LibraryInstallRule)
   foreach(qtlib ${P_LIBRARIES})
     foreach(build_type ${build_types})
       get_target_property(${build_type}_loc Qt5::${qtlib} LOCATION_${build_type})
-      if(NOT APPLE)
         install(FILES ${${build_type}_loc}
                 DESTINATION "${destination}"
                 CONFIGURATIONS ${build_type}
                 COMPONENT Applications)
-      endif()
     endforeach()
   endforeach()
 
 endfunction()
-
-
 
 #-------------------------------------------------------------------------------
 # Finds plugins from the Qt installation. The pluginlist argument should be
@@ -262,6 +271,11 @@ function(AddQt5Plugins)
     set(CMAKE_BUILD_TYPE "Release")
   endif()
   cmake_parse_arguments(P "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+  if(APPLE)
+    return()
+  endif()
+
   set(build_types "Debug;Release")
   if(WIN32)
     set(qt_plugin_prefix "")
@@ -274,54 +288,22 @@ function(AddQt5Plugins)
   endif()
 
   # message(STATUS "Qt5 Plugins: ${P_PLUGIN_NAMES}")
-
+  # We only use install rules for Linux/Windows.
   foreach(build_type ${build_types})
     # message(STATUS "build_type: ${build_type}")
     foreach(plugin ${P_PLUGIN_NAMES})
       if(TARGET Qt5::${plugin}${P_PLUGIN_SUFFIX})
         get_target_property(${build_type}_loc Qt5::${plugin}${P_PLUGIN_SUFFIX} LOCATION_${build_type})
-        # We only use install rules for Linux/Windows.
-        # OS X will get its own installation script that moves the Plugins correctly into the bundle
-        if(NOT APPLE)
+
           install(FILES ${${build_type}_loc}
               DESTINATION ./Plugins/${P_PLUGIN_TYPE}
               CONFIGURATIONS ${build_type}
               COMPONENT Applications)
         endif()
-      endif()
+
     endforeach()
   endforeach()
 
-  # Assign either the debug or release plugin list to the QTPLUGINS variable on NON msvc platforms.
-  if(NOT MSVC_IDE)
-    if( ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-        set(QTPLUGINS ${QTPLUGINS_DEBUG})
-    else()
-        set(QTPLUGINS ${QTPLUGINS_RELEASE})
-    endif()
-  endif()
-
-  if(NOT APPLE)
-      set(QTCONF_DIR "bin")
-      set(QTPLUGINS_DIR "../")
-      if(WIN32)
-        set(QTCONF_DIR ".")
-        set(QTPLUGINS_DIR "")
-      endif()
-
-      # Create the qt.conf file so that the image plugins will be loaded correctly
-      FILE(WRITE ${PROJECT_BINARY_DIR}/qt.conf "[Paths]\nPlugins = ${QTPLUGINS_DIR}Plugins\n")
-      FILE(APPEND ${PROJECT_BINARY_DIR}/qt.conf "Prefix = .\n")
-      FILE(APPEND ${PROJECT_BINARY_DIR}/qt.conf "LibraryExecutables = .\n")
-      FILE(APPEND ${PROJECT_BINARY_DIR}/qt.conf "Data = .\n")
-
-      install(FILES ${PROJECT_BINARY_DIR}/qt.conf
-              DESTINATION ${QTCONF_DIR}
-              COMPONENT Applications)
-  endif()
-
-
-  #file(APPEND ${P_LIBRARY_SEARCH_FILE} "${QT_PLUGINS_DIR}/${plugintype};")
 endfunction()
 
 # ------------------------------------------------------------------------------
@@ -360,6 +342,7 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
   get_property(Qt5_STATUS_PRINTED GLOBAL PROPERTY Qt5_STATUS_PRINTED)
   execute_process(COMMAND "${QtQMake_location}" -query QT_INSTALL_PREFIX OUTPUT_VARIABLE QM_QT_INSTALL_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process(COMMAND "${QtQMake_location}" -query QT_VERSION OUTPUT_VARIABLE QM_QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND "${QtQMake_location}" -query QT_INSTALL_PLUGINS OUTPUT_VARIABLE QM_QT_INSTALL_PLUGINS OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   if(NOT Qt5_STATUS_PRINTED)
     message(STATUS "Qt5 Location: ${QM_QT_INSTALL_PREFIX}")
@@ -384,38 +367,8 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
     # This is pretty much needed on all the platforms.
     AddQt5LibraryInstallRule(LIBRARIES ${Qt5_COMPONENTS})
   endif()
-  
-  #----------------------------------------------------------------------------
-  # This is a wierd way to bracket the Qt releases but there has NEVER been 
-  # an official version of Qt with a 5.x.99 version so we are going to use that
-  # range to bracket each release of Qt that we Support.
-  # QT 5.6.x
-  if (QM_QT_VERSION VERSION_GREATER 5.5.99 AND QM_QT_VERSION VERSION_LESS 5.6.99)
-    set(Qt5_ICU_COMPONENTS icudt54 icuin54 icuuc54)
-  endif()
 
-  # QT 5.7.x
-  if (QM_QT_VERSION VERSION_GREATER 5.6.99 AND QM_QT_VERSION VERSION_LESS 5.7.99
-      AND NOT (CMAKE_SYSTEM_NAME MATCHES "Linux"))
-    set(Qt5_ICU_COMPONENTS icudt54 icuin54 icuuc54)
-    message(WARNING "Qt 5.7 has never been tested. It may not package correctly")
-  endif()
-
-  # QT 5.8.x
-  if (QM_QT_VERSION VERSION_GREATER 5.7.99 AND QM_QT_VERSION VERSION_LESS 5.8.99)
-    set(Qt5_ICU_COMPONENTS "")
-  endif()
-
-  # QT 5.9.x
-  if (QM_QT_VERSION VERSION_GREATER 5.8.99 AND QM_QT_VERSION VERSION_LESS 5.9.99)
-    set(Qt5_ICU_COMPONENTS "")
-  endif()
-
-  # QT 5.10.x
-  if (QM_QT_VERSION VERSION_GREATER 5.9.99 AND QM_QT_VERSION VERSION_LESS 5.10.99)
-    set(Qt5_ICU_COMPONENTS "")
-  endif()
-
+  set(Qt5_ICU_COMPONENTS "")
   if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(Qt5_ICU_COMPONENTS icui18n icuuc icudata)
   endif()
@@ -442,7 +395,9 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
     get_property(QT_PLUGINS_FILE_TEMPLATE GLOBAL PROPERTY QtPluginsCMakeFile)
   endif()
 
-
+  if(NOT DREAM3D_ANACONDA)
+    AddQtConfTargets(QT_PLUGINS_DIR ${QM_QT_INSTALL_PLUGINS})
+  endif()
 
   file(WRITE ${QT_PLUGINS_FILE_TEMPLATE} "")
   file(WRITE ${QT_PLUGINS_FILE} "")
@@ -545,5 +500,4 @@ macro(CMP_AddQt5Support Qt5Components ProjectBinaryDir VarPrefix)
   list(APPEND CMP_LIB_SEARCH_DIRS ${QT_BINARY_DIR} ${QT_LIBRARY_DIR} )
 
 endmacro()
-
 
