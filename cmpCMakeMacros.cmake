@@ -63,7 +63,7 @@ macro(ConfigureMacOSXBundlePlist TARGET_NAME DEBUG_EXTENSION ICON_FILE_PATH VERS
     MACOSX_BUNDLE_BUNDLE_NAME ${TARGET_NAME}${DBG_EXTENSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION_STRING}
     MACOSX_BUNDLE_BUNDLE_VERSION ${VERSION_STRING}
-    MACOSX_BUNDLE_COPYRIGHT "Copyright 2018, BlueQuartz Software, LLC All Rights Reserved."
+    MACOSX_BUNDLE_COPYRIGHT "Copyright 2021, BlueQuartz Software, LLC All Rights Reserved."
     MACOSX_BUNDLE_INFO_PLIST ${CMP_OSX_TOOLS_SOURCE_DIR}/MacOSXBundleInfo.plist.in
   )
 
@@ -214,17 +214,17 @@ function(BuildQtAppBundle)
 #-- Create install rules for our own plugins that are targets in the build system which
 #-- is only needed on Apple systems to make sure we get them installed into the bundle.
 #-- On other platforms the standard installation rules are used instead.
-    if(APPLE)
+    if(0)
         foreach(pi ${QAB_OTHER_PLUGINS})
-            get_filename_component(plugin_name "${pi}" NAME)
-            install(PROGRAMS ${pi}
-                    DESTINATION "${pi_dest}"
-                    COMPONENT ${QAB_COMPONENT}
-            )
-            list(APPEND app_plugin_list "\${CMAKE_INSTALL_PREFIX}/${pi_dest}/${plugin_name}")
+          get_filename_component(plugin_name "${pi}" NAME)
+          install(PROGRAMS ${pi}
+                  DESTINATION "${pi_dest}"
+                  COMPONENT ${QAB_COMPONENT}
+          )
+          list(APPEND app_plugin_list "\${CMAKE_INSTALL_PREFIX}/${pi_dest}/${plugin_name}")
         endforeach()
-    endif(APPLE)
-
+    endif(0)
+  
     #-- Create an Install Rule for the main app bundle target
     install(TARGETS ${QAB_TARGET}
         COMPONENT ${QAB_COMPONENT}
@@ -248,7 +248,7 @@ function(BuildQtAppBundle)
         configure_file("${CMP_OSX_TOOLS_SOURCE_DIR}/CompleteBundle.cmake.in"
                 "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" @ONLY IMMEDIATE)
 
-        install(SCRIPT "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" COMPONENT ${QAB_COMPONENT})
+        #install(SCRIPT "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" COMPONENT ${QAB_COMPONENT})
     endif(APPLE)
 
 #-- This should be called when we are on Linux
