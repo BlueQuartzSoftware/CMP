@@ -508,7 +508,7 @@ endmacro(StaticLibraryProperties)
 #-------------------------------------------------------------------------------
 function(PluginProperties)
     set(options )
-    set(oneValueArgs TARGET_NAME DEBUG_EXTENSION VERSION LIB_SUFFIX FOLDER OUTPUT_NAME BINARY_DIR PLUGIN_FILE INSTALL_DEST)
+    set(oneValueArgs TARGET_NAME DEBUG_EXTENSION VERSION LIB_SUFFIX FOLDER OUTPUT_NAME BINARY_DIR PLUGIN_FILE ANACONDA_INSTALL)
     set(multiValueArgs )
     cmake_parse_arguments(Z "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
     
@@ -550,26 +550,39 @@ function(PluginProperties)
         file(APPEND ${Z_PLUGIN_FILE} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lib${Z_OUTPUT_NAME}${Z_LIB_SUFFIX};")
     endif()
 
-    if(NOT APPLE)
-        set(BUILD_TYPES "Debug;Release")
-        foreach(btype ${BUILD_TYPES})
-            if(NOT DREAM3D_ANACONDA)
-              install(TARGETS ${Z_TARGET_NAME}
-                      DESTINATION ${Z_INSTALL_DEST}
-                      CONFIGURATIONS ${btype}
-                      COMPONENT Applications
-                      ARCHIVE DESTINATION lib
-              )
-            else()
-              install(TARGETS ${Z_TARGET_NAME}
-                      RUNTIME DESTINATION ${Z_INSTALL_DEST}
-                      LIBRARY DESTINATION ${Z_INSTALL_DEST}
-                      CONFIGURATIONS ${btype}
-                      COMPONENT Applications
-              )
-            endif()
-        endforeach()
+    set(Z_INSTALL_DEST "./Plugins")
+    
+    if(WIN32)
+      set(Z_INSTALL_DEST ".")
     endif()
+
+    if(NOT APPLE AND UNIX)
+      set(Z_INSTALL_DEST "lib")
+    endif()
+
+    if(Z_ANACONDA_INSTALL AND WIN32)
+      set(Z_INSTALL_DEST "bin")
+    endif()
+
+
+    set(BUILD_TYPES "Debug;Release")
+    foreach(btype ${BUILD_TYPES})
+      if(Z_ANACONDA_INSTALL)
+        install(TARGETS ${Z_TARGET_NAME}
+                RUNTIME DESTINATION ${Z_INSTALL_DEST}
+                LIBRARY DESTINATION ${Z_INSTALL_DEST}
+                CONFIGURATIONS ${btype}
+                COMPONENT Applications
+        )
+      elseif(NOT APPLE)
+        install(TARGETS ${Z_TARGET_NAME}
+                DESTINATION ${Z_INSTALL_DEST}
+                CONFIGURATIONS ${btype}
+                COMPONENT Applications
+                ARCHIVE DESTINATION lib
+        )
+      endif()
+    endforeach()
 
     # --------------------------------------------------------------------
     # Add in some compiler definitions
