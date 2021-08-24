@@ -214,7 +214,7 @@ function(BuildQtAppBundle)
 #-- Create install rules for our own plugins that are targets in the build system which
 #-- is only needed on Apple systems to make sure we get them installed into the bundle.
 #-- On other platforms the standard installation rules are used instead.
-    if(0)
+    if(APPLE AND NOT DREAM3D_ANACONDA)
         foreach(pi ${QAB_OTHER_PLUGINS})
           get_filename_component(plugin_name "${pi}" NAME)
           install(PROGRAMS ${pi}
@@ -223,7 +223,7 @@ function(BuildQtAppBundle)
           )
           list(APPEND app_plugin_list "\${CMAKE_INSTALL_PREFIX}/${pi_dest}/${plugin_name}")
         endforeach()
-    endif(0)
+    endif()
   
     #-- Create an Install Rule for the main app bundle target
     install(TARGETS ${QAB_TARGET}
@@ -237,18 +237,20 @@ function(BuildQtAppBundle)
 #-- Create last install rule that will run fixup_bundle() on OS X Machines. Other platforms we
 #-- are going to create the install rules elsewhere
     if(APPLE)
-        list(APPEND lib_search_dirs "${QAB_LIB_SEARCH_DIRS}")
+      list(APPEND lib_search_dirs "${QAB_LIB_SEARCH_DIRS}")
 
-        set(OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT
-                    "${QAB_BINARY_DIR}/OSX_Scripts/${QAB_TARGET}_CompleteBundle.cmake")
+      set(OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT
+                  "${QAB_BINARY_DIR}/OSX_Scripts/${QAB_TARGET}_CompleteBundle.cmake")
 
-        get_property(SIMPLibSearchDirs GLOBAL PROPERTY SIMPLibSearchDirs)
+      get_property(SIMPLibSearchDirs GLOBAL PROPERTY SIMPLibSearchDirs)
 
 
-        configure_file("${CMP_OSX_TOOLS_SOURCE_DIR}/CompleteBundle.cmake.in"
-                "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" @ONLY IMMEDIATE)
+      configure_file("${CMP_OSX_TOOLS_SOURCE_DIR}/CompleteBundle.cmake.in"
+              "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" @ONLY IMMEDIATE)
 
-        #install(SCRIPT "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" COMPONENT ${QAB_COMPONENT})
+      if(NOT DREAM3D_ANACONDA)
+        install(SCRIPT "${OSX_MAKE_STANDALONE_BUNDLE_CMAKE_SCRIPT}" COMPONENT ${QAB_COMPONENT})
+      endif()
     endif(APPLE)
 
 #-- This should be called when we are on Linux
