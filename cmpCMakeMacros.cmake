@@ -549,21 +549,47 @@ function(PluginProperties)
     else()
         file(APPEND ${Z_PLUGIN_FILE} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/lib${Z_OUTPUT_NAME}${Z_LIB_SUFFIX};")
     endif()
-
-    set(Z_INSTALL_DEST "./Plugins")
     
-    if(WIN32)
-      set(Z_INSTALL_DEST ".")
-    endif()
 
-    if(NOT APPLE AND UNIX)
-      set(Z_INSTALL_DEST "lib")
-    endif()
+    #  These are the install rules for the various combinations of plugin and packaging
+    # |                |  MACOS  | WINDOWS | LINUX |
+    # |----------------|-------- |---------|-------|
+    # | [A] .plugin    | lib     |    .    | lib   |
+    # | [A] .guiplugin | Plugins |    .    | Plugins |
+    # | .plugin        | Plugins |    .    | lib   |
+    # | .guiplugin     | Plugins | Plugins | lib   |
 
-    if(Z_ANACONDA_INSTALL AND WIN32)
-      set(Z_INSTALL_DEST "bin")
+    if(Z_ANACONDA_INSTALL)
+      if("${Z_LIB_SUFFIX}" STREQUAL ".plugin")
+        if(WIN32)
+          set(Z_INSTALL_DEST ".")
+        else()
+          set(Z_INSTALL_DEST "lib")
+        endif()
+      elseif("${Z_LIB_SUFFIX}" STREQUAL ".guiplugin")
+        if(WIN32)
+          set(Z_INSTALL_DEST ".")
+        else()
+          set(Z_INSTALL_DEST "Plugins")
+        endif()
+      endif()
+    else()
+      if("${Z_LIB_SUFFIX}" STREQUAL ".plugin")
+        if(WIN32)
+          set(Z_INSTALL_DEST ".")
+        elseif(APPLE)
+          set(Z_INSTALL_DEST "Plugins")
+        else()
+          set(Z_INSTALL_DEST "lib")
+        endif()
+      elseif("${Z_LIB_SUFFIX}" STREQUAL ".guiplugin")
+        if(WIN32 OR APPLE)
+          set(Z_INSTALL_DEST "Plugins")
+        else()
+          set(Z_INSTALL_DEST "lib")
+        endif()
+      endif()
     endif()
-
 
     set(BUILD_TYPES "Debug;Release")
     foreach(btype ${BUILD_TYPES})
@@ -574,7 +600,7 @@ function(PluginProperties)
                 CONFIGURATIONS ${btype}
                 COMPONENT Applications
         )
-      elseif(NOT APPLE)
+      elseif(NOT APPLE) # Normal packaging on Apple has it's own build script so we don't need the instal rule
         install(TARGETS ${Z_TARGET_NAME}
                 DESTINATION ${Z_INSTALL_DEST}
                 CONFIGURATIONS ${btype}
