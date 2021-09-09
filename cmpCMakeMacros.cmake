@@ -554,21 +554,21 @@ function(PluginProperties)
     #  These are the install rules for the various combinations of plugin and packaging
     # |                |  MACOS  | WINDOWS | LINUX |
     # |----------------|-------- |---------|-------|
-    # | [A] .plugin    | lib     |    .    | lib   |
-    # | [A] .guiplugin | Plugins |    .    | Plugins |
+    # | [A] .plugin    | lib     |    bin  | lib   |
+    # | [A] .guiplugin | Plugins |    bin  | Plugins |
     # | .plugin        | Plugins |    .    | lib   |
     # | .guiplugin     | Plugins | Plugins | lib   |
 
     if(Z_ANACONDA_INSTALL)
       if("${Z_LIB_SUFFIX}" STREQUAL ".plugin")
         if(WIN32)
-          set(Z_INSTALL_DEST ".")
+          set(Z_INSTALL_DEST "bin")
         else()
           set(Z_INSTALL_DEST "lib")
         endif()
       elseif("${Z_LIB_SUFFIX}" STREQUAL ".guiplugin")
         if(WIN32)
-          set(Z_INSTALL_DEST ".")
+          set(Z_INSTALL_DEST "bin")
         else()
           set(Z_INSTALL_DEST "Plugins")
         endif()
