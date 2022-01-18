@@ -171,8 +171,10 @@ function(BuildQtAppBundle)
     if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         set_target_properties( ${QAB_TARGET}
                 PROPERTIES
-                INSTALL_RPATH \$ORIGIN/../lib
-    )
+                INSTALL_RPATH \$ORIGIN/../lib)
+      target_link_options(${QAB_TARGET} PUBLIC "-Wl,--disable-new-dtags")
+      target_compile_options(${QAB_TARGET} PUBLIC "-no-pie")
+
     endif()
 #-- Create install rules for any Qt Plugins that are needed
     set(pi_dest ${QAB_INSTALL_DEST}/Plugins)
@@ -552,12 +554,12 @@ function(PluginProperties)
     
 
     #  These are the install rules for the various combinations of plugin and packaging
-    # |                |  MACOS  | WINDOWS | LINUX |
-    # |----------------|-------- |---------|-------|
-    # | [A] .plugin    | lib     |    bin  | lib   |
+    # |                |  MACOS  | WINDOWS |  LINUX  |
+    # |----------------|-------- |---------|---------|
+    # | [A] .plugin    | lib     |    bin  | lib     |
     # | [A] .guiplugin | Plugins |    bin  | Plugins |
-    # | .plugin        | Plugins |    .    | lib   |
-    # | .guiplugin     | Plugins | Plugins | lib   |
+    # | .plugin        | Plugins |    .    | lib     |
+    # | .guiplugin     | Plugins | Plugins | Plugins |
 
     if(Z_ANACONDA_INSTALL)
       if("${Z_LIB_SUFFIX}" STREQUAL ".plugin")
@@ -583,14 +585,14 @@ function(PluginProperties)
           set(Z_INSTALL_DEST "lib")
         endif()
       elseif("${Z_LIB_SUFFIX}" STREQUAL ".guiplugin")
-        if(WIN32 OR APPLE)
+       # if(WIN32 OR APPLE)
           set(Z_INSTALL_DEST "Plugins")
-        else()
-          set(Z_INSTALL_DEST "lib")
-        endif()
+       # else()
+       #   set(Z_INSTALL_DEST "lib")
+       # endif()
       endif()
     endif()
-
+    
     set(BUILD_TYPES "Debug;Release")
     foreach(btype ${BUILD_TYPES})
       if(Z_ANACONDA_INSTALL)
