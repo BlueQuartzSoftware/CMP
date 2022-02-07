@@ -168,10 +168,11 @@ function(BuildQtAppBundle)
         target_compile_options(${QAB_TARGET} PRIVATE "/MP")
     endif()
     
-    if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-        set_target_properties( ${QAB_TARGET}
-                PROPERTIES
-                INSTALL_RPATH \$ORIGIN/../lib)
+    if(CMAKE_SYSTEM_NAME MATCHES "Linux")    
+      set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+      set_target_properties( ${QAB_TARGET}
+              PROPERTIES
+              INSTALL_RPATH \$ORIGIN/../lib)
       target_link_options(${QAB_TARGET} PUBLIC "-Wl,--disable-new-dtags")
       target_compile_options(${QAB_TARGET} PUBLIC "-no-pie")
 
@@ -336,10 +337,14 @@ function(BuildToolBundle)
                 RELEASE_OUTPUT_NAME ${QAB_TARGET}
     )
     if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+      set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
       set_target_properties( ${QAB_TARGET}
             PROPERTIES
             INSTALL_RPATH \$ORIGIN/../lib )
+      target_link_options(${QAB_TARGET} PUBLIC "-Wl,--disable-new-dtags")
+      target_compile_options(${QAB_TARGET} PUBLIC "-no-pie")
     endif()
+
     if(NOT "${QAB_SOLUTION_FOLDER}" STREQUAL "")
       set_target_properties(${QAB_TARGET}
                           PROPERTIES FOLDER ${QAB_SOLUTION_FOLDER})
