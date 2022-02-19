@@ -201,10 +201,12 @@ function(BuildQtAppBundle)
     endif()
     
     if(CMAKE_SYSTEM_NAME MATCHES "Linux")
-        set_target_properties( ${QAB_TARGET}
-                PROPERTIES
-                INSTALL_RPATH \$ORIGIN/../lib
-    )
+      set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+      set_target_properties( ${QAB_TARGET}
+              PROPERTIES
+              INSTALL_RPATH \$ORIGIN/../lib)
+      target_link_options(${QAB_TARGET} PUBLIC "-Wl,--disable-new-dtags")
+      target_compile_options(${QAB_TARGET} PUBLIC "-no-pie")
     endif()
 #-- Create install rules for any Qt Plugins that are needed
     set(pi_dest ${QAB_INSTALL_DEST}/Plugins)
@@ -364,10 +366,14 @@ function(BuildToolBundle)
                 RELEASE_OUTPUT_NAME ${QAB_TARGET}
     )
     if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+      set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
       set_target_properties( ${QAB_TARGET}
             PROPERTIES
             INSTALL_RPATH \$ORIGIN/../lib )
+      target_link_options(${QAB_TARGET} PUBLIC "-Wl,--disable-new-dtags")
+      target_compile_options(${QAB_TARGET} PUBLIC "-no-pie")
     endif()
+
     if(NOT "${QAB_SOLUTION_FOLDER}" STREQUAL "")
       set_target_properties(${QAB_TARGET}
                           PROPERTIES FOLDER ${QAB_SOLUTION_FOLDER})
@@ -498,8 +504,10 @@ macro(LibraryProperties targetName DEBUG_EXTENSION)
       if(CMAKE_SYSTEM_NAME MATCHES "Linux")
         set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
         set_target_properties( ${targetName}
-                    PROPERTIES
-                    INSTALL_RPATH \$ORIGIN/../lib)
+              PROPERTIES
+              INSTALL_RPATH \$ORIGIN/../lib )
+        target_link_options(${targetName} PUBLIC "-Wl,--disable-new-dtags")
+        target_compile_options(${targetName} PUBLIC "-no-pie")
       endif()
 
    endif( BUILD_SHARED_LIBS)
