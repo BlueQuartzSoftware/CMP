@@ -434,6 +434,8 @@ macro(CMP_AddQt5Support Qt5Components NeedQtWebEngine ProjectBinaryDir VarPrefix
     message(FATAL_ERROR "Qt5 is Required for ${PROJECT_NAME} to build. Please install it.")
   endif()
 
+  add_compile_definitions(QT_NO_KEYWORDS)
+
   # We need the location of QMake for later on in order to find the plugins directory
   get_target_property(QtQMake_location Qt5::qmake LOCATION)
   get_property(Qt5_STATUS_PRINTED GLOBAL PROPERTY Qt5_STATUS_PRINTED)

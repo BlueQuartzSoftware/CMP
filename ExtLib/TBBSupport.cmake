@@ -111,8 +111,6 @@ if(TBB_FOUND)
     endif()
   endif()
 
-
-
   if(NOT APPLE)
     AddTBBCopyInstallRules(LIBVAR tbb
                         LIBNAME tbb
