@@ -102,6 +102,9 @@ if(TBB_FOUND)
     file(APPEND ${CMP_PLUGIN_SEARCHDIR_FILE} "${TBB_LIBRARY_DIRS};")
   endif()
 
+  get_property(SIMPLibSearchDirs GLOBAL PROPERTY SIMPLibSearchDirs)
+  file(APPEND "${SIMPLibSearchDirs}" "${TBB_DIR}/../../../lib;")
+
   if(MSVC_IDE)
     set(BUILD_TYPES Debug Release)
   else()
