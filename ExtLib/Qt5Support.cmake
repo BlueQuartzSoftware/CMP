@@ -297,21 +297,27 @@ function(AddQt5Plugins)
     endif()
   endif()
 
+  # Apple does not need the qt.conf because of how the libraries are linked?
+  # Not sure where MSVC needs the qt.conf to land.
   if(NOT APPLE)
       set(QTCONF_DIR "bin")
       set(QTPLUGINS_DIR "../")
-      if(WIN32)
+      if(MSVC_IDE)
         set(QTCONF_DIR ".")
         set(QTPLUGINS_DIR "")
       endif()
 
-      # Create the qt.conf file so that the image plugins will be loaded correctly
-      FILE(WRITE ${PROJECT_BINARY_DIR}/qt.conf "[Paths]\nPlugins = ${QTPLUGINS_DIR}Plugins\n")
-      FILE(APPEND ${PROJECT_BINARY_DIR}/qt.conf "Prefix = .\n")
-      FILE(APPEND ${PROJECT_BINARY_DIR}/qt.conf "LibraryExecutables = .\n")
-      FILE(APPEND ${PROJECT_BINARY_DIR}/qt.conf "Data = .\n")
+      # Ask qmake where the Qt5 installation directory is
+      execute_process(COMMAND "${QtQMake_location}" -query QT_INSTALL_PREFIX OUTPUT_VARIABLE QM_QT_INSTALL_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-      install(FILES ${PROJECT_BINARY_DIR}/qt.conf
+      # Create the qt.conf file so that the Qt Plugins will be found
+      set(CMP_QT_CONF_PATH "${PROJECT_BINARY_DIR}/${QTCONF_DIR}/qt.conf")
+      FILE(WRITE "${CMP_QT_CONF_PATH}" "[Paths]\nPlugins = ${QM_QT_INSTALL_PREFIX}/plugins\n")
+      FILE(APPEND "${CMP_QT_CONF_PATH}" "Prefix = .\n")
+      FILE(APPEND "${CMP_QT_CONF_PATH}" "LibraryExecutables = .\n")
+      FILE(APPEND "${CMP_QT_CONF_PATH}" "Data = .\n")
+
+      install(FILES "${CMP_QT_CONF_PATH}"
               DESTINATION ${QTCONF_DIR}
               COMPONENT Applications)
   endif()
